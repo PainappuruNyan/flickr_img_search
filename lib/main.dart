@@ -50,7 +50,6 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     final SharedPreferences prefs = di.sl();
-    final images = context.select((SearchBloc bloc) => bloc.state.images);
     return Scaffold(
       resizeToAvoidBottomInset: false,
       backgroundColor: Colors.indigo.shade200,
@@ -72,7 +71,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 contentPadding: EdgeInsets.zero,
                 hintText: 'Search',
               ),
-              onChanged: (value) {
+              onSubmitted: (value) {
                 setState(() {
                   query = value;
                 });
@@ -136,67 +135,86 @@ class _MyHomePageState extends State<MyHomePage> {
               icon: const Icon(Icons.arrow_forward)),
         ],
       ),
-      body: Center(
-        child: images.isEmpty
-            ? Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 95),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: <Widget>[
-                    SvgPicture.asset(
-                      'assets/images/flickr_logo.svg',
-                      width: 220,
-                    ),
-                    SvgPicture.asset(
-                      'assets/images/flickr.svg',
-                    ),
-                    const Text(
-                      'Можно найти все',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-              )
-            : RefreshIndicator(
-          onRefresh: refresh,
-              child: GridView.builder(
-                  shrinkWrap: true,
-                  itemCount: images.length,
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: axisCount),
-                  itemBuilder: (BuildContext context, int index) {
-                    return Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: FullScreenWidget(
-                        disposeLevel: DisposeLevel.High,
-                        child: GestureDetector(
-                          onDoubleTap: () {
-                            dynamic data = prefs.getString('favorites') ?? '';
-                            List<dynamic> favorites = [];
-                            if (data.isNotEmpty) {
-                              favorites = [...jsonDecode(data)];
-                            }
-                            favorites.add(images[index]);
-                            prefs.setString('favorites', jsonEncode(favorites));
-                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                                content: Text('Изображение добавлено в избранное')));
-                          },
-                          child: Image.network(
-                            "https://live.staticflickr.com/${images[index]['server']}/${images[index]['id']}_${images[index]['secret']}.jpg",
-                            fit: BoxFit.none,
+      body: BlocBuilder<SearchBloc, SearchState>(
+        builder: (context, state) {
+          if (state is LoadingState) {
+            return const Center(
+              child: CircularProgressIndicator(),
+            );
+          }
+          if (state is SearchImgState) {
+            final images = context.select((SearchBloc bloc) => state.images);
+            return Center(
+              child: images.isEmpty
+                  ? Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 95),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: <Widget>[
+                          SvgPicture.asset(
+                            'assets/images/flickr_logo.svg',
+                            width: 220,
                           ),
-                        ),
+                          SvgPicture.asset(
+                            'assets/images/flickr.svg',
+                          ),
+                          const Text(
+                            'Можно найти все',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
                       ),
-                    );
-                  }),
-            ),
+                    )
+                  : RefreshIndicator(
+                      onRefresh: refresh,
+                      child: GridView.builder(
+                          shrinkWrap: true,
+                          itemCount: images.length,
+                          gridDelegate:
+                              SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: axisCount),
+                          itemBuilder: (BuildContext context, int index) {
+                            return Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: FullScreenWidget(
+                                disposeLevel: DisposeLevel.High,
+                                child: GestureDetector(
+                                  onDoubleTap: () {
+                                    dynamic data =
+                                        prefs.getString('favorites') ?? '';
+                                    List<dynamic> favorites = [];
+                                    if (data.isNotEmpty) {
+                                      favorites = [...jsonDecode(data)];
+                                    }
+                                    favorites.add(images[index]);
+                                    prefs.setString(
+                                        'favorites', jsonEncode(favorites));
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(
+                                            content: Text(
+                                                'Изображение добавлено в избранное')));
+                                  },
+                                  child: Image.network(
+                                    "https://live.staticflickr.com/${images[index]['server']}/${images[index]['id']}_${images[index]['secret']}.jpg",
+                                    fit: BoxFit.none,
+                                  ),
+                                ),
+                              ),
+                            );
+                          }),
+                    ),
+            );
+          }
+          return const Text('');
+        },
       ),
     );
   }
+
   Future refresh() async {
     context.read<SearchBloc>().add(SearchImgEvent(query, page));
-}
+  }
 }

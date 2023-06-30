@@ -20,18 +20,17 @@ EventTransformer<E> debounceDroppable<E>(Duration duration) {
 }
 
 class SearchBloc extends Bloc<SearchEvent, SearchState> {
-  SearchBloc() : super(SearchState(images: [])) {
+  SearchBloc() : super(SearchImgState(images: [])) {
     on<SearchImgEvent>(
       _onSearch,
-      transformer: debounceDroppable(
-        const Duration(seconds: 3),
-      ),
     );
   }
+
   final _httpClient = Dio();
 
   _onSearch(SearchImgEvent event, Emitter<SearchState> emit) async {
     if (event.query.length < 3) return;
+    emit(LoadingState());
     final res = await _httpClient.get(
       apiUrl,
       queryParameters: {
@@ -43,6 +42,7 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
         'nojsoncallback': 1,
       },
     );
-    emit(SearchState(images: res.data['photos']['photo'], page: res.data['photos']['page']));
+    emit(SearchImgState(
+        images: res.data['photos']['photo'], page: res.data['photos']['page']));
   }
 }

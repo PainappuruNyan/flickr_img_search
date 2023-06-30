@@ -1,11 +1,17 @@
 part of 'search_bloc.dart';
 
-class SearchState {
+abstract class SearchState {
+  const SearchState();
+}
+
+class SearchImgState extends SearchState {
   final List<dynamic> images;
   final int page;
 
-  SearchState({
+  SearchImgState({
     this.page = 1,
     required this.images,
   });
 }
+
+class LoadingState extends SearchState {}
