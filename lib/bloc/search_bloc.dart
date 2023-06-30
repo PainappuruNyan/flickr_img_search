@@ -29,7 +29,6 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
   final _httpClient = Dio();
 
   Future<void> _onSearch(SearchImgEvent event, Emitter<SearchState> emit) async {
-    if (event.query.length < 3) return;
     emit(LoadingState());
     final res = await _httpClient.get(
       apiUrl,
