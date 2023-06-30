@@ -60,7 +60,7 @@ class _FavoritesState extends State<Favorites> {
         ),
       ),
       body: favorites.isEmpty
-          ? const Text('Your favorites is empty')
+          ? const Center(child: Text('Your favorites is empty'))
           : GridView.builder(
               padding: const EdgeInsets.all(8),
               shrinkWrap: true,
@@ -79,8 +79,15 @@ class _FavoritesState extends State<Favorites> {
                         if (data.isNotEmpty) {
                           favorites = [...jsonDecode(data)];
                         }
-                        favorites.add(favorites[index]);
+                        favorites.remove(favorites[index]);
                         prefs.setString('favorites', jsonEncode(favorites));
+                        ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                                content:
+                                    Text('Изображение удалено из избранного')));
+                        setState(() {
+                          favorites = [...jsonDecode(data)];
+                        });
                       },
                       child: Image.network(
                         "https://live.staticflickr.com/${favorites[index]['server']}/${favorites[index]['id']}_${favorites[index]['secret']}.jpg",
